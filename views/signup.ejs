@@ -36,6 +36,17 @@
     <div class="content-heading">
     </div>
     <div class="content-inner">
+        <% if (message.length > 0) { %>
+            <div class="tile-wrap error-message">
+                <div class="tile tile-collapse tile-red">
+                    <div>
+                        <div class="tile-inner">
+                            <div class="text-overflow"><%= message %></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        <% } %>
         <div class="container">
             <div class="row">
                 <div class="col-lg-4 col-lg-push-4 col-sm-6 col-sm-push-3">
@@ -53,7 +64,7 @@
 												<img alt="Login" src="material_design/images/users/avatar-001.jpg">
 											</span>
                                     </p>
-                                    <form class="form" action="/signup" method="post">
+                                    <form class="form" action="/signup" method="post" autocomplete="off">
                                         <div class="form-group form-group-label">
                                             <div class="row">
                                                 <div class="col-md-10 col-md-push-1">
@@ -67,6 +78,22 @@
                                                 <div class="col-md-10 col-md-push-1">
                                                     <label class="floating-label" for="login-password">Password</label>
                                                     <input class="form-control" id="login-password" type="password" name="password">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="form-group form-group-label">
+                                            <div class="row">
+                                                <div class="col-md-10 col-md-push-1">
+                                                    <label class="floating-label" for="login-name">Name</label>
+                                                    <input class="form-control" id="login-name" type="text" name="name">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="form-group form-group-label">
+                                            <div class="row">
+                                                <div class="col-md-10 col-md-push-1">
+                                                    <label class="floating-label" for="login-email">Email</label>
+                                                    <input class="form-control" id="login-email" type="email" name="email">
                                                 </div>
                                             </div>
                                         </div>

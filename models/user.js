@@ -1,64 +1,32 @@
-/**
- * Copyright (c) 2015 QUp World Inc. All Rights Reserved.
- *
- * This document contains proprietary and confidential information of QUp World.
- * It may not be used for any other purposes, reproduced in whole or in part, nor passed to any organization or person
- * without the specific permission in writing of the Technical Director, QUp World.
- *
- * @author QUp World
- *
- * @see http://qupworld.com/terms
- * @see http://qupworld.com/privacy
- *
- * Description
- *
- */
-// app/models/user.js
-// load the things we need
+var util = require('util');
+var EventEmitter = require('events').EventEmitter;
 var mongoose = require('mongoose');
-var bcrypt   = require('bcrypt-nodejs');
-var passportLocalMongoose = require('passport-local-mongoose');
+var UserModel = mongoose.model('User');
 
-// define the schema for our user model
-var userSchema = mongoose.Schema({
+function User(){}
+util.inherits(User, EventEmitter);
 
-    local            : {
-        username     : String,
-        password     : String,
-        email        : String,
-        name         : String
-    },
-    facebook         : {
-        id           : String,
-        token        : String,
-        email        : String,
-        name         : String
-    },
-    twitter          : {
-        id           : String,
-        token        : String,
-        displayName  : String,
-        username     : String
-    },
-    google           : {
-        id           : String,
-        token        : String,
-        email        : String,
-        name         : String
+/**
+ * Active user when click link in email
+ *
+ * @method activeUser
+ * @param userId
+ * @return {Bollean} success or fail
+ */
+User.prototype.activeUser = function(userId, cb){
+    if(userId){
+        UserModel.update({_id: userId}, {$set: {isActive: true}}, function(err){
+            if(err){
+                console.log(new Date() + ' BUG BUG BUG UserModel.update: '+userId);
+                console.log(err);
+                return cb(false);
+            }else{
+                return cb(true);
+            }
+        });
+    }else{
+        return cb(false);
     }
+}
 
-});
-
-// methods ======================
-// generating a hash
-userSchema.methods.generateHash = function(password) {
-    return bcrypt.hashSync(password, bcrypt.genSaltSync(8), null);
-};
-
-// checking if password is valid
-userSchema.methods.validPassword = function(password) {
-    return bcrypt.compareSync(password, this.local.password);
-};
-
-// create the model for users and expose it to our app
-module.exports = mongoose.model('User', userSchema,'User');
+module.exports = User;

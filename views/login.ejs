@@ -34,11 +34,19 @@
 </header>
 <div class="content">
     <div class="content-heading">
-        <% if (message.length > 0) { %>
-            <div class="alert alert-danger"><%= message %></div>
-        <% } %>
     </div>
     <div class="content-inner">
+        <% if (message.length > 0) { %>
+            <div class="tile-wrap error-message">
+                <div class="tile tile-collapse tile-red">
+                    <div>
+                        <div class="tile-inner">
+                            <div class="text-overflow"><%= message %></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        <% } %>
         <div class="container">
             <div class="row">
                 <div class="col-lg-4 col-lg-push-4 col-sm-6 col-sm-push-3">

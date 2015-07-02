@@ -1,29 +1,48 @@
 var express = require('express');
 var router = express.Router();
+var User = require('../models/user');
 
 module.exports = function(passport){
 
     /* GET home page. */
-    router.get('/index', function (req, res) {
+    router.get('/', function (req, res) {
         res.render('index');
     });
-    router.get('/', function (req, res) {
+    router.get('/login', function (req, res) {
         res.render('login', { message: req.flash('loginMessage') });
     });
-    router.post('/login', function (req, res) {
-        console.log(1);
-        res.render('index');
-    });
+    router.post('/login', passport.authenticate('local-login', {
+        successRedirect : '/index', // redirect to the secure profile section
+        failureRedirect : '/login', // redirect back to the signup page if there is an error
+        failureFlash : true // allow flash messages
+    }));
     router.get('/signup', function (req, res) {
         res.render('signup', { message: req.flash('signupMessage') });
     });
 
     // process the signup form
     router.post('/signup', passport.authenticate('signup', {
-        successRedirect: '/index',
+        successRedirect: '/',
         failureRedirect: '/signup',
         failureFlash : true
     }));
+
+    router.get('/welcome/:userId', function(req, res){
+        var user = new User();
+        user.activeUser(req.param('userId'), function(status){
+            if(status){
+                res.redirect('/');
+            }else{
+                res.render('error', {
+                    message: 'Not Found',
+                    error: {
+                        status: 404,
+                        stack: 'UserId Not Found'
+                    }
+                })
+            }
+        });
+    });
 
     // =====================================
     // PROFILE SECTION =====================

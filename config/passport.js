@@ -15,8 +15,12 @@
  */
 // config/passport.js
 var LocalStrategy   = require('passport-local').Strategy;
+var FacebookStrategy = require('passport-facebook').Strategy;
+var TwitterStrategy  = require('passport-twitter').Strategy;
+var GoogleStrategy = require('passport-google-oauth').OAuth2Strategy;
 var User = require('../models/schemas/user');
 var Mail = require('../models/mail');
+var config = require('./setting');
 var bCrypt = require('bcrypt-nodejs');
 
 // expose this function to our app using module.exports
@@ -48,7 +52,6 @@ module.exports = function(passport) {
     // =========================================================================
     // we are using named strategies since we have one for login and one for signup
     // by default, if there was no name, it would just be called 'local'
-
     passport.use('signup', new LocalStrategy({
             passReqToCallback : true // allows us to pass back the entire request to the callback
         },
@@ -97,6 +100,9 @@ module.exports = function(passport) {
         })
     );
 
+    // =========================================================================
+    // LOCAL LOGIN ============================================================
+    // =========================================================================
     passport.use('local-login', new LocalStrategy({
             // by default, local strategy uses username and password, we will override with email
             usernameField : 'username',
@@ -107,7 +113,7 @@ module.exports = function(passport) {
 
             // find a user whose email is the same as the forms email
             // we are checking to see if the user trying to login already exists
-            User.findOne({ 'local.email' :  username }, function(err, user) {
+            User.findOne({ 'local.username' :  username }, function(err, user) {
                 // if there are any errors, return the error before anything else
                 if (err)
                     return done(err);
@@ -126,5 +132,139 @@ module.exports = function(passport) {
 
         })
     );
+
+    // =========================================================================
+    // FACEBOOK ================================================================
+    // =========================================================================
+    passport.use(new FacebookStrategy({
+            // pull in our app id and secret from our auth.js file
+            clientID        : config.authentication.facebookAuth.clientID,
+            clientSecret    : config.authentication.facebookAuth.clientSecret,
+            callbackURL     : config.authentication.facebookAuth.callbackURL,
+            passReqToCallback : true // allows us to pass in the req from our route (lets us check if a user is logged in or not)
+        },
+        // facebook will send back the token and profile
+        function(req, token, refreshToken, profile, done) {
+            // asynchronous
+            process.nextTick(function () {
+                // find the user in the database based on their facebook id
+                User.findOne({'facebook.id': profile.id}, function (err, user) {
+                    // if there is an error, stop everything and return that
+                    // ie an error connecting to the database
+                    if (err)
+                        return done(err);
+                    // if the user is found, then log them in
+                    if (user) {
+                        return done(null, user); // user found, return that user
+                    } else {
+                        // if there is no user found with that facebook id, create them
+                        var newUser = new User();
+
+                        // set all of the facebook information in our user model
+                        console.log(profile);
+                        newUser.facebook.id = profile.id; // set the users facebook id
+                        newUser.facebook.token = token; // we will save the token that facebook provides to the user
+                        newUser.facebook.name = profile.name.givenName + ' ' + profile.name.familyName; // look at the passport user profile to see how names are returned
+                        newUser.facebook.email = profile.emails[0].value; // facebook can return multiple emails so we'll take the first
+                        // save our user to the database
+                        newUser.save(function (err) {
+                            if (err)
+                                throw err;
+                            // if successful, return the new user
+                            return done(null, newUser);
+                        });
+                    }
+                });
+            });
+        })
+    );
+
+    // =========================================================================
+    // TWITTER =================================================================
+    // =========================================================================
+    passport.use(new TwitterStrategy({
+            consumerKey     : config.authentication.twitterAuth.consumerKey,
+            consumerSecret  : config.authentication.twitterAuth.consumerSecret,
+            callbackURL     : config.authentication.twitterAuth.callbackURL
+        },
+        function(token, tokenSecret, profile, done) {
+            // make the code asynchronous
+            // User.findOne won't fire until we have all our data back from Twitter
+            process.nextTick(function() {
+                User.findOne({ 'twitter.id' : profile.id }, function(err, user) {
+                    // if there is an error, stop everything and return that
+                    // ie an error connecting to the database
+                    if (err)
+                        return done(err);
+                    // if the user is found then log them in
+                    if (user) {
+                        return done(null, user); // user found, return that user
+                    } else {
+                        // if there is no user, create them
+                        var newUser                 = new User();
+                        console.log(profile);
+                        // set all of the user data that we need
+                        newUser.twitter.id          = profile.id;
+                        newUser.twitter.token       = token;
+                        newUser.twitter.username    = profile.username;
+                        newUser.twitter.displayName = profile.displayName;
+                        // save our user into the database
+                        newUser.save(function(err) {
+                            if (err)
+                                throw err;
+                            return done(null, newUser);
+                        });
+                    }
+                });
+            });
+        })
+    );
+
+    // =========================================================================
+    // GOOGLE ==================================================================
+    // =========================================================================
+    passport.use(new GoogleStrategy({
+
+            clientID        : config.authentication.googleAuth.clientID,
+            clientSecret    : config.authentication.googleAuth.clientSecret,
+            callbackURL     : config.authentication.googleAuth.callbackURL,
+
+        },
+        function(token, refreshToken, profile, done) {
+
+            // make the code asynchronous
+            // User.findOne won't fire until we have all our data back from Google
+            process.nextTick(function() {
+
+                // try to find the user based on their google id
+                User.findOne({ 'google.id' : profile.id }, function(err, user) {
+                    if (err)
+                        return done(err);
+
+                    if (user) {
+
+                        // if a user is found, log them in
+                        return done(null, user);
+                    } else {
+                        // if the user isnt in our database, create a new user
+                        var newUser          = new User();
+
+                        // set all of the relevant information
+                        newUser.google.id    = profile.id;
+                        newUser.google.token = token;
+                        newUser.google.name  = profile.displayName;
+                        newUser.google.email = profile.emails[0].value; // pull the first email
+
+                        // save the user
+                        newUser.save(function(err) {
+                            if (err)
+                                throw err;
+                            return done(null, newUser);
+                        });
+                    }
+                });
+            });
+
+        }));
 
 }

@@ -10,6 +10,11 @@ var passport        = require('passport');
 var flash           = require('connect-flash');
 var morgan          = require('morgan');
 var session         = require('express-session');
+var raygun          = require('raygun');
+var raygunClient    = new raygun.Client().init({ apiKey: '/2Nc3fIiNK6UBL48Wn/PdA==' });
+
+//console.log wrapper for a bit more readable output in Node.js
+require('better-log').install();
 
 var dataConfig = require('./config/setting');
 // configuration ===============================================================
@@ -81,4 +86,21 @@ app.use(function (err, req, res, next) {
     });
 });
 
+app.use(raygunClient.expressHandler);
+
 module.exports = app;
+
+var mysql      = require('mysql');
+var connection = mysql.createConnection({
+    host     : '192.168.2.237',
+    database : 'mysql',
+    user     : 'root',
+    password : 'root'
+});
+connection.connect(function(err) {
+    if (err) {
+        console.error('MYSQL error connecting: ' + err.stack);
+        return;
+    }
+    console.log('MYSQL connected as id ' + connection.threadId);
+});

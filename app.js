@@ -10,6 +10,7 @@ var passport        = require('passport');
 var flash           = require('connect-flash');
 var morgan          = require('morgan');
 var session         = require('express-session');
+var i18n            = require("i18n");
 var raygun          = require('raygun');
 var raygunClient    = new raygun.Client().init({ apiKey: '/2Nc3fIiNK6UBL48Wn/PdA==' });
 
@@ -39,7 +40,16 @@ app.use(session({ secret: 'ilovescotchscotchyscotchscotch' })); // session secre
 app.use(passport.initialize());
 app.use(passport.session()); // persistent login sessions
 app.use(flash()); // use connect-flash for flash messages stored in session
-require('./config/passport')(passport);
+require('./config/passport')(passport)
+
+i18n.configure({
+    // setup some locales - other locales default to en silently
+    locales:['en', 'vi'],
+    // you may alter a site wide default locale
+    defaultLocale: 'vi',
+    // where to store json files - defaults to './locales' relative to modules directory
+    directory: __dirname + '/locales'
+});
 
 app.all('*', function (req, res, next) {
     res.locals.title = 'Demo';
@@ -89,18 +99,3 @@ app.use(function (err, req, res, next) {
 app.use(raygunClient.expressHandler);
 
 module.exports = app;
-
-var mysql      = require('mysql');
-var connection = mysql.createConnection({
-    host     : '192.168.2.237',
-    database : 'mysql',
-    user     : 'root',
-    password : 'root'
-});
-connection.connect(function(err) {
-    if (err) {
-        console.error('MYSQL error connecting: ' + err.stack);
-        return;
-    }
-    console.log('MYSQL connected as id ' + connection.threadId);
-});

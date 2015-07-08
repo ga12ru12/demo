@@ -11,15 +11,18 @@ var flash           = require('connect-flash');
 var morgan          = require('morgan');
 var session         = require('express-session');
 var i18n            = require("i18n");
-var raygun          = require('raygun');
-var raygunClient    = new raygun.Client().init({ apiKey: '/2Nc3fIiNK6UBL48Wn/PdA==' });
 
 //console.log wrapper for a bit more readable output in Node.js
 require('better-log').install();
 
 var dataConfig = require('./config/setting');
 // configuration ===============================================================
-mongoose.connect(dataConfig.dbUrl); // connect to our database
+var mongodb_connection_string = dataConfig.dbUrl;
+if(process.env.OPENSHIFT_MONGODB_DB_URL){
+    mongodb_connection_string = process.env.OPENSHIFT_MONGODB_DB_URL + 'demo';
+}
+console.log(new Date().toISOString()+' mongoDB url: '+mongodb_connection_string)
+mongoose.connect(mongodb_connection_string); // connect to our database
 
 var app = express();
 
@@ -95,7 +98,5 @@ app.use(function (err, req, res, next) {
         error: {}
     });
 });
-
-app.use(raygunClient.expressHandler);
 
 module.exports = app;
